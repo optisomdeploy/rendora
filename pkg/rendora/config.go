@@ -34,6 +34,14 @@ type rendoraConfig struct {
 		Port    uint16 `valid:"range(1|65535)"`
 	}
 	Backend struct {
+		Command	struct {
+			Arguments	[]string
+			Dir	string
+			Domain	string
+			Enable	bool
+			Local	string
+			Program	string
+		}
 		URL string `valid:"required,requrl"`
 	} `mapstructure:"backend"`
 
@@ -117,6 +125,7 @@ func (R *Rendora) initConfig() error {
 	}
 
 	viper.SetDefault("debug", false)
+	viper.SetDefault("backend.command.enable", false)
 	viper.SetDefault("listen.port", 3001)
 	viper.SetDefault("listen.address", "0.0.0.0")
 	viper.SetDefault("cache.type", "local")

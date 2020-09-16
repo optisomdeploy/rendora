@@ -20,6 +20,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -223,6 +225,19 @@ func (c *headlessClient) getResponse(uri string) (*HeadlessResponse, error) {
 		return nil, err
 	}
 
+	content := domResponse.OuterHTML
+	if c.rendora.c.Backend.Command.Enable {
+		urx := strings.Replace(uri, c.rendora.c.Backend.Command.Local, c.rendora.c.Backend.Command.Domain, 1)
+		args_slice := append(c.rendora.c.Backend.Command.Arguments, urx)
+		cmd := exec.Command(c.rendora.c.Backend.Command.Program, args_slice...)
+		cmd.Dir = c.rendora.c.Backend.Command.Dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, err
+		}
+		content = "<!DOCTYPE html>" + string(out)
+	}
+
 	elapsed := float64(time.Since(timeStart)) / float64(time.Duration(1*time.Millisecond))
 
 	if c.rendora.c.Server.Enable {
@@ -235,8 +250,9 @@ func (c *headlessClient) getResponse(uri string) (*HeadlessResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ret := &HeadlessResponse{
-		Content:    domResponse.OuterHTML,
+		Content: content,
 		Status:  responseReply.Response.Status,
 		Headers: responseHeaders,
 		Latency: elapsed,
